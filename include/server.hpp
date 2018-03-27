@@ -2,9 +2,18 @@
 // created by xujijun on 2018-03-20
 //
 
+#define _XJJ_DEBUG 1
+
+#if _XJJ_DEBUG
+#define DEBUG_PRINT printDebugInfo
+#else
+#define DEBUG_PRINT
+#endif
+
 #ifndef _XJJ_SERVER_HPP
 #define _XJJ_SERVER_HPP
 
+#include <cstdarg>
 #include <functional>
 #include <sys/epoll.h>
 #include <unordered_map>
@@ -117,7 +126,7 @@ namespace xjj {
 
         inline int32_t generateTaskId();
 
-
+        static void printDebugInfo(const char* format, ...);
 
         static void printBreakpoint(int pt_id);
 

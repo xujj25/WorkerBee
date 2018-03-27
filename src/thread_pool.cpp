@@ -111,6 +111,7 @@ namespace xjj {
      */
     static void *threadFunction(void* thread_ptr) {
         reinterpret_cast<ThreadPool::Thread*>(thread_ptr) -> run();
+        return nullptr;
     }
 
     /*!

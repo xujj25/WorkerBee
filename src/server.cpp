@@ -37,7 +37,7 @@ namespace xjj {
             int ret = epoll_wait(m_epoll_fd, &m_events[0], MAX_EVENT_COUNT, -1);
             if (ret < 0)
             {
-                printf("epoll failure\n");
+                DEBUG_PRINT("epoll failure\n");
                 break;
             }
 
@@ -84,10 +84,10 @@ namespace xjj {
                 int conn_fd = accept(m_listen_fd, (struct sockaddr *) &client_address, &client_addr_length);
                 addFd(conn_fd, true);  // 设置EPOLLONESHOT
             } else if (m_events[i].events & EPOLLIN) {
-                printf("event trigger once\n");
+                DEBUG_PRINT("event trigger once\n");
                 m_thread_pool -> addTask(
                         [=] () {
-                            printf("Going to process packet from sock_fd = %d\n", sock_fd);
+                            DEBUG_PRINT("Going to process packet from sock_fd = %d\n", sock_fd);
 
                             std::unique_ptr<PacketProcessor>
                                     processor(new PacketProcessor(m_business_logic));
@@ -105,13 +105,13 @@ namespace xjj {
                                     resetOneShot(sock_fd);
                                     break;
                                 default:
-                                    printf("something else happened when reading buffer\n");
+                                    DEBUG_PRINT("something else happened when reading buffer\n");
                             }
                         },
                         generateTaskId()
                 );
             } else {
-                printf("something else happened\n");
+                DEBUG_PRINT("something else happened\n");
             }
         }
     }
@@ -191,16 +191,16 @@ namespace xjj {
             int ret = static_cast<int>(recv(sock_fd, &m_buffer[0], BUFFER_SIZE - 1, 0));
             if (ret < 0) {
                 if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-                    printf("Read later\n");
+                    DEBUG_PRINT("Read later\n");
                     return Server::ResetOneShotStatusCode;  // 暂无数据可读，设置EPOLLONESHOT，交由epoll继续监听读事件
                 }
-                printf("Error occur when reading\n");
+                DEBUG_PRINT("Error occur when reading\n");
                 return Server::CloseSockFdStatusCode;
             } else if (ret == 0) {
-                printf("TCP peer closed the connection, or 0 bytes data sent.\n");
+                DEBUG_PRINT("TCP peer closed the connection, or 0 bytes data sent.\n");
                 return Server::CloseSockFdStatusCode;
             } else {
-                printf("Got %d bytes of content: %s\n", ret, &m_buffer[0]);
+                DEBUG_PRINT("Got %d bytes of content: %s\n", ret, &m_buffer[0]);
                 generatePacket(ret, sock_fd);
             }
         }
@@ -216,8 +216,8 @@ namespace xjj {
         }
         auto packet_real_len = static_cast<int32_t>(m_packet.length());
 
-        std::cout << "Before cut: packet_real_len = " << packet_real_len
-                  << ", m_packet = \"" << m_packet << '\"' << std::endl;
+        DEBUG_PRINT("Before cut: packet_real_len = %d, m_packet = \"%s\"\n",
+                packet_real_len, m_packet.c_str());
 
         if (packet_real_len >= m_packet_len) {
 
@@ -230,7 +230,8 @@ namespace xjj {
 
             cutPacketStream();
         }
-        std::cout << "After cut: m_packet_len = " << m_packet_len << ", m_packet = \"" << m_packet << '\"' << std::endl;
+
+        DEBUG_PRINT("After cut: m_packet_len = %d, m_packet = \"%s\"\n", m_packet_len, m_packet.c_str());
     }
 
     void Server::PacketProcessor::getPacketLen(int data_len) {
@@ -274,13 +275,23 @@ namespace xjj {
     }
 
     void Server::printBreakpoint(int pt_id) {
-        std::cout << std::endl;
-        std::cout << "breakpoint " << pt_id << std::endl;
-        std::cout << std::endl;
+        std::string msg = "breakpoint ";
+        msg.append(std::to_string(pt_id));
+        msg.append(1, '\n');
+        DEBUG_PRINT(msg.c_str());
     }
 
     int32_t Server::generateTaskId() {
         return -1;
+    }
+
+    void Server::printDebugInfo(const char *format, ...) {
+        va_list arg_ptr;
+
+        va_start(arg_ptr, format);  // 获取可变参数列表
+        fflush(stdout);  // 刷新输出缓冲区
+        vfprintf(stderr, format, arg_ptr);  // 输出调试信息
+        va_end(arg_ptr);  // 可变参数列表结束
     }
 
     Server::Request::Request(std::string body)
@@ -313,7 +324,7 @@ namespace xjj {
 
         packet.append(body);
 
-        std::cout << "Going to send: " << packet << std::endl;
+        DEBUG_PRINT("Going to send: %s", packet.c_str());
 
         // 使用连接fd匹配互斥量加锁，防止多线程竞争写同个fd
         AutoLockMutex autoLockMutex(m_socket_mutex_map[m_sock_fd].get());

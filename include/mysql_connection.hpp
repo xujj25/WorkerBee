@@ -32,6 +32,8 @@ namespace sql {
     private:
         int m_row_num;
 
+        uint64_t  m_affect_row_num;
+
         MYSQL *m_mysql;
 
         MYSQL_RES *m_result;
@@ -44,6 +46,8 @@ namespace sql {
         ~ResultSet();
 
         bool next();
+
+        uint64_t getAffectedRow() const;
 
         int getRow() const;
 

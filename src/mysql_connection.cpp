@@ -34,9 +34,16 @@ namespace sql {
     ResultSet::ResultSet(MYSQL *mysql)
             : m_mysql(mysql), m_row_num(0) {
         m_result = mysql_store_result(m_mysql);
-        if (!m_result)
-            throw SQLException::generateException(
-                    m_mysql, "xjj::ResultSet::ResultSet", "getting result");
+        if (!m_result) {
+            if (mysql_field_count(m_mysql) == 0) {
+                // sql执行未返回数据，不是SELECT操作
+                m_affect_row_num = mysql_affected_rows(m_mysql);
+            } else {
+                // 出错，抛出异常
+                throw SQLException::generateException(
+                        m_mysql, "xjj::ResultSet::ResultSet", "getting result");
+            }
+        }
     }
 
     bool ResultSet::next() {
@@ -75,6 +82,10 @@ namespace sql {
 
     int ResultSet::getInt(const std::string &column_label) const {
         return std::stoi(getString(column_label), nullptr, 10);
+    }
+
+    uint64_t ResultSet::getAffectedRow() const {
+        return m_affect_row_num;
     }
 
     ResultSet::~ResultSet() {

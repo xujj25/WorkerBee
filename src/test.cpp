@@ -11,78 +11,79 @@ using std::unique_ptr;
 using std::shared_ptr;
 using namespace xjj;
 
-class Test {
+class BusinessLogic {
 private:
     MySQLConnectionPool* m_conn_pool;
+
 public:
 
-    Test() {
+    BusinessLogic() {
         m_conn_pool = MySQLConnectionPool::getInstance();
     }
 
-    ~Test() {
-        delete m_conn_pool;
-    }
+    void operator() (xjj::Server::Request request, xjj::Server::Response response) {
 
-    void businessLogic(xjj::Server::Request request, xjj::Server::Response response) {
+        cout << "Request:" << endl;
+        cout << request.getBody() << endl;
 
-        rapidjson::Document doc;
-        doc.Parse(request.getBody().c_str());
+        response.sendResponse("ok");
 
-        if (!doc.IsObject() || !doc.HasMember("country_id") || !doc["country_id"].IsUint()) {
-            response.sendResponse("Error!");
-            return;
-        }
-
-        std::string sql = "SELECT * FROM country WHERE country_id = ";
-        sql.append(std::to_string(doc["country_id"].GetUint()));
-
-        cout << endl;
-        cout << sql << endl;
-
-        try {
-//            unique_ptr<sql::Driver> driver;
-            shared_ptr<sql::Connection> con;
-            unique_ptr<sql::Statement> stmt;
-            unique_ptr<sql::ResultSet> res;
-
-            con = m_conn_pool -> getConnection();
-
-            /* Connect to the MySQL testdb database */
-            con -> setSchema("testdb");
-
-            stmt.reset(con->createStatement());
-
-            res.reset(stmt->executeQuery(sql));
-            while (res->next()) {
-//                cout << "\t... MySQL replies: ";
-//                /* Access column data by alias or column name */
-//                cout << res->getString("country") << endl;
-//                cout << "\t... MySQL says it again: ";
-//                /* Access column data by numeric offset, 1 is the first column */
-//                cout << res->getInt(1) << endl;
-                response.sendResponse(res -> getString("country"));
-            }
-
-            m_conn_pool -> returnConnection(con);
-
-        } catch (sql::SQLException &e) {
-
-            cout << "# ERR: " << e.what() << endl;
-            cout << " (MySQL error code: " << e.getErrorCode() << ")";
-        }
-
-        cout << endl;
+//        rapidjson::Document doc;
+//        doc.Parse(request.getBody().c_str());
+//
+//        // 客户端数据合法性校验
+//        if (!doc.IsObject() || !doc.HasMember("Id") || !doc["Id"].IsUint()) {
+//            response.sendResponse("Error!");
+//            return;
+//        }
+//
+//        std::string sql = "INSERT INTO Writers(Id, Name) VALUES(";
+//        sql.append(std::to_string(doc["Id"].GetUint()));
+//        sql.append(", \'");
+//        sql.append(doc["Name"].GetString());
+//        sql.append("\')");
+//
+//        cout << endl;
+//        cout << sql << endl;
+//
+//        try {
+////            unique_ptr<sql::Driver> driver;
+//            shared_ptr<sql::Connection> con;
+//            unique_ptr<sql::Statement> stmt;
+//            unique_ptr<sql::ResultSet> res;
+//
+//            con = m_conn_pool -> getConnection();
+//
+//            /* Connect to the MySQL testdb database */
+//            con -> setSchema("testdb");
+//
+//            stmt.reset(con->createStatement());
+//
+//            res.reset(stmt->executeQuery(sql));
+//
+//            std::string res_msg = "Affected rows: ";
+//
+//            res_msg.append(std::to_string(res -> getAffectedRow()));
+//
+//            response.sendResponse(res_msg);
+//
+//            m_conn_pool -> returnConnection(con);
+//
+//        } catch (sql::SQLException &e) {
+//
+//            cout << "# ERR: " << e.what() << endl;
+//            cout << " (MySQL error code: " << e.getErrorCode() << ")";
+//
+//            response.sendResponse("Error!");
+//        }
+//
+//        cout << endl;
     }
 };
 
 int main() {
-    Test test;
-    std::unique_ptr<xjj::Server> server(new xjj::Server(
-            [&] (Server::Request request, Server::Response response) {
-                test.businessLogic(request, response);
-            }
-    ));
+    BusinessLogic businessLogic;
+    std::unique_ptr<xjj::Server> server(new xjj::Server(businessLogic));
     server -> run();
 
     return 0;
