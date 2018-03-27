@@ -46,13 +46,6 @@ public:
             unique_ptr<sql::Statement> stmt;
             unique_ptr<sql::ResultSet> res;
 
-            /* Create a connection */
-//        driver.reset(sql::Driver::getDriverInstance());
-
-//            std::string url("127.0.0.1");
-//            std::string username("root");
-//            std::string password("4836303XJJ");
-
             con = m_conn_pool -> getConnection();
 
             /* Connect to the MySQL testdb database */
