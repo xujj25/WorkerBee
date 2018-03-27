@@ -103,6 +103,7 @@ namespace sql {
                 const std::string& host = "",
                 const std::string& user = "",
                 const std::string& passwd = "",
+                const std::string& db = "",
                 unsigned int port = 0
         );
     };

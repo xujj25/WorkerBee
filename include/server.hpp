@@ -2,7 +2,7 @@
 // created by xujijun on 2018-03-20
 //
 
-#define _XJJ_DEBUG 1
+#define _XJJ_DEBUG 0
 
 #if _XJJ_DEBUG
 #define DEBUG_PRINT printDebugInfo

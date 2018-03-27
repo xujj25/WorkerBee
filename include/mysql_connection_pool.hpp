@@ -36,6 +36,8 @@ namespace xjj {
 
         std::string m_passwd;
 
+        std::string m_db_name;
+
         unsigned int m_port;
 
         size_t m_pool_size;

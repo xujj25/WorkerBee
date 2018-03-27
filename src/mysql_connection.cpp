@@ -145,12 +145,13 @@ namespace sql {
             const std::string &host,
             const std::string &user,
             const std::string &passwd,
+            const std::string &db,
             unsigned int port) {
 
         MYSQL *mysql = mysql_init(nullptr);
 
         if (!mysql_real_connect(mysql, host.c_str(), user.c_str(), passwd.c_str(),
-                               nullptr, port, nullptr, 0))
+                               db.c_str(), port, nullptr, 0))
             throw SQLException::generateException(
                     mysql, "xjj::sql::Driver::connect", "connecting");
         return new Connection(mysql);

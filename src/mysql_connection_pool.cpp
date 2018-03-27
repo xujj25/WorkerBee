@@ -22,7 +22,9 @@ namespace xjj {
         AutoLockMutex autoLockMutex(&m_list_mutex);
         for (auto count = m_pool_size; count > 0; count--) {
             m_conn_list.push_back(
-                    std::shared_ptr<sql::Connection>(m_driver -> connect(m_host, m_user, m_passwd, m_port))
+                    std::shared_ptr<sql::Connection>(
+                            m_driver -> connect(m_host, m_user, m_passwd, m_db_name, m_port)
+                    )
             );
         }
     }
@@ -65,6 +67,9 @@ namespace xjj {
             if (!document.HasMember("db_passwd") || !document["db_passwd"].IsString())
                 throw std::runtime_error(exception_msg + "\"db_passwd\"");
 
+            if (!document.HasMember("db_name") || !document["db_name"].IsString())
+                throw std::runtime_error(exception_msg + "\"db_name\"");
+
             if (!document.HasMember("db_port") || !document["db_port"].IsUint())
                 throw std::runtime_error(exception_msg + "\"db_port\"");
 
@@ -74,6 +79,7 @@ namespace xjj {
             m_host = document["db_host"].GetString();
             m_user = document["db_user"].GetString();
             m_passwd = document["db_passwd"].GetString();
+            m_db_name = document["db_name"].GetString();
             m_port = document["db_port"].GetUint();
             m_pool_size = document["db_pool_size"].GetUint64();
 
