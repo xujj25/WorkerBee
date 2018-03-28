@@ -5,6 +5,7 @@
 ## 项目结构
 
 - 服务器 `Server`
+    - 服务器内部报文包处理类 `PacketProcessor`
     - 服务器内部请求类 `Request`
     - 服务器内部响应类 `Response`
 - 线程池类 `ThreadPool`
