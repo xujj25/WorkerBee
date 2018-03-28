@@ -44,6 +44,7 @@ private:
 
         } catch (sql::SQLException &e) {
             cout << e.what() << endl;
+            cout << "(SQLException error code: " << e.getErrorCode() << ")" << endl;
             res = nullptr;
         }
         if (con)
