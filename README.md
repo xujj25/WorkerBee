@@ -8,10 +8,10 @@
     - 服务器内部报文包处理类 `PacketProcessor`
     - 服务器内部请求类 `Request`
     - 服务器内部响应类 `Response`
-- 线程池类 `ThreadPool`
+- 线程池 `ThreadPool`
     - 线程池内部线程类 `Thread`
     - 阻塞队列模板类 `BlockingQueue`
-    - 互斥量类 `Mutex`
+    - 互斥量类 `Mutex`（以及基于对 `Mutex` 的RAII封装类 `AutoLockMutex`）
     - 条件变量类 `ConditionVariable`
 - MySQL数据库连接池 `MySQLConnectionPool`
     - 数据库驱动类 `Driver`
