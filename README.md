@@ -129,17 +129,18 @@
 
     int main() {
         std::unique_ptr<xjj::Server> server(new xjj::Server(
-            [] (const xjj::Server::Request& req,
+                [] (const xjj::Server::Request& req,
                     xjj::Server::Response& res) {
-                
-                std::string req_body = req.getBody();
-                std::string res_body;        
 
-                // 此处编写用户业务逻辑代码
+                    std::string req_body = req.getBody();
+                    std::string res_body;
 
-                res.sendResponse(res_body);
-            }
-        ))
+                    // 此处编写用户业务逻辑代码
+
+                    res.sendResponse(res_body);
+                }
+        ));
+        server -> run();
     }
     ```
     之后模仿示例代码修改Makefile之后即可编译运行。
