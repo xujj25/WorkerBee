@@ -29,7 +29,7 @@ namespace xjj {
      * @brief 构造函数
      * @param [in] business_logic 业务逻辑函数对象
      */
-    Server::Server(std::function<void(Request, Response)> business_logic)
+    Server::Server(std::function<void(const Request&, Response&)> business_logic)
             : m_business_logic(std::move(business_logic)),
               m_thread_pool(new ThreadPool()) {}
 
@@ -45,7 +45,12 @@ namespace xjj {
      * @brief 运行服务器
      */
     void Server::run() {
+
+        printf("Initializing server ...\n");
+
         initServer();  // 初始化服务器
+
+        printf("\nFinished initialization, going to run.\n");
 
         while (true)  // 循环等待epoll事件到来
         {
@@ -94,7 +99,7 @@ namespace xjj {
      * @param [in] fd 目标socket文件描述符
      */
     void Server::resetOneShot(int fd) {
-        epoll_event event;
+        epoll_event event{};
         event.data.fd = fd;
         event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
         epoll_ctl(m_epoll_fd, EPOLL_CTL_MOD, fd, &event);
@@ -234,7 +239,7 @@ namespace xjj {
      * @brief 构造函数
      * @param [in] business_logic 用户业务逻辑函数对象
      */
-    Server::PacketProcessor::PacketProcessor(std::function<void(Request, Response)>& business_logic)
+    Server::PacketProcessor::PacketProcessor(std::function<void(const Request&, Response&)>& business_logic)
             : m_packet_len(-1), m_business_logic(business_logic) {}
 
     /*!
@@ -292,7 +297,9 @@ namespace xjj {
             std::string valid_packet(m_packet.substr(0, static_cast<unsigned long>(m_packet_len)));
 
             // 执行业务逻辑
-            m_business_logic(Request(valid_packet), Response(sock_fd));
+            Request req(valid_packet);
+            Response res(sock_fd);
+            m_business_logic(req, res);
 
             // 切分报文边界，获取后续报文的包头
             cutPacketStream();
@@ -396,7 +403,7 @@ namespace xjj {
      * @brief 获取请求体
      * @return 请求体
      */
-    const std::string &Server::Request::getBody() {
+    const std::string &Server::Request::getBody() const {
         return m_body;
     }
 

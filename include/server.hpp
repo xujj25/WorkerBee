@@ -56,7 +56,7 @@ namespace xjj {
              * @brief 获取请求体
              * @return 请求体
              */
-            const std::string& getBody();
+            const std::string& getBody() const;
         };
 
         /*!
@@ -111,7 +111,7 @@ namespace xjj {
             std::string m_packet_len_buf;
 
             /// 需要执行的用户业务逻辑
-            std::function<void(Request, Response)>& m_business_logic;
+            std::function<void(const Request&, Response&)>& m_business_logic;
 
             /*!
              * @brief 生成单个请求报文
@@ -137,7 +137,7 @@ namespace xjj {
              * @brief 构造函数
              * @param [in] business_logic 用户业务逻辑函数对象
              */
-            explicit PacketProcessor(std::function<void(Request, Response)>& business_logic);
+            explicit PacketProcessor(std::function<void(const Request&, Response&)>& business_logic);
 
             /*!
              * @brief 读取并处理缓冲区数据
@@ -151,7 +151,7 @@ namespace xjj {
          * @brief 构造函数
          * @param [in] business_logic 业务逻辑函数对象
          */
-        explicit Server(std::function<void(Request, Response)> business_logic);
+        explicit Server(std::function<void(const Request&, Response&)> business_logic);
 
         /*!
          * @brief 析构函数
@@ -242,7 +242,7 @@ namespace xjj {
         epoll_event m_events[MAX_EVENT_COUNT];
 
         /// 用户业务逻辑函数对象
-        std::function<void(Request, Response)> m_business_logic;
+        std::function<void(const Request&, Response&)> m_business_logic;
 
         /// 线程池对象指针
         std::unique_ptr<ThreadPool> m_thread_pool;

@@ -14,11 +14,15 @@ namespace xjj {
 
     Mutex MySQLConnectionPool::m_instance_mutex;
 
+    /*!
+     * @brief 构造函数
+     */
     MySQLConnectionPool::MySQLConnectionPool() {
         m_driver = sql::Driver::getDriverInstance();
 
-        getConfiguration();
+        getConfiguration();  // 获取配置文件配置信息
 
+        // 加锁初始化连接池
         AutoLockMutex autoLockMutex(&m_list_mutex);
         for (auto count = m_pool_size; count > 0; count--) {
             m_conn_list.push_back(
@@ -26,6 +30,10 @@ namespace xjj {
         }
     }
 
+    /*!
+     * @brief 获取连接池全局单例
+     * @return 连接池对象
+     */
     std::shared_ptr<MySQLConnectionPool> MySQLConnectionPool::getInstance() {
         if (!m_instance) {
             AutoLockMutex autoLockMutex(&m_instance_mutex);
@@ -35,6 +43,9 @@ namespace xjj {
         return m_instance;
     }
 
+    /*!
+     * @brief 获取配置文件内容
+     */
     void MySQLConnectionPool::getConfiguration() {
         std::ifstream config_fs;
         config_fs.open(ConfigFileName.c_str());
@@ -45,13 +56,15 @@ namespace xjj {
                     "Exception: in function xjj::MySQLConnectionPool::getConfiguration when getting ";
             std::string config_json, pcs;
 
-            while (config_fs >> pcs) {
+            while (config_fs >> pcs) {  // 获取文件内容
                 config_json.append(pcs);
             }
 
+            // 使用RapidJSON解析配置信息
             rapidjson::Document document;
             document.Parse(config_json.c_str());
 
+            // 解析结果合法性判定
             if (!document.IsObject())
                 throw std::runtime_error(exception_msg + "JSON object from \"./config.json\"");
 
@@ -85,17 +98,28 @@ namespace xjj {
         }
     }
 
+    /*!
+     * @brief 析构函数
+     */
     MySQLConnectionPool::~MySQLConnectionPool() {
-        m_conn_list.clear();
+        m_conn_list.clear();  // 清空连接池
     }
 
+    /*!
+     * @brief 获取连接对象
+     * @return 连接对象
+     */
     std::shared_ptr<sql::Connection> MySQLConnectionPool::getConnection() {
         AutoLockMutex autoLockMutex(&m_list_mutex);
-        auto conn(std::move(m_conn_list.front()));
+        std::shared_ptr<sql::Connection> conn(std::move(m_conn_list.front()));
         m_conn_list.pop_front();
         return conn;
     }
 
+    /*!
+     * @brief 返还连接
+     * @param [in] conn 目标连接对象
+     */
     void MySQLConnectionPool::returnConnection(
             std::shared_ptr<sql::Connection> conn) {
         AutoLockMutex autoLockMutex(&m_list_mutex);
