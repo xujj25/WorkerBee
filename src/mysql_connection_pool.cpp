@@ -10,30 +10,27 @@ namespace xjj {
 
     const std::string MySQLConnectionPool::ConfigFileName = "./config.json";
 
-    MySQLConnectionPool* MySQLConnectionPool::m_instance = nullptr;
+    std::shared_ptr<MySQLConnectionPool> MySQLConnectionPool::m_instance = nullptr;
 
     Mutex MySQLConnectionPool::m_instance_mutex;
 
     MySQLConnectionPool::MySQLConnectionPool() {
-        m_driver.reset(sql::Driver::getDriverInstance());
+        m_driver = sql::Driver::getDriverInstance();
 
         getConfiguration();
 
         AutoLockMutex autoLockMutex(&m_list_mutex);
         for (auto count = m_pool_size; count > 0; count--) {
             m_conn_list.push_back(
-                    std::shared_ptr<sql::Connection>(
-                            m_driver -> connect(m_host, m_user, m_passwd, m_db_name, m_port)
-                    )
-            );
+                    m_driver -> connect(m_host, m_user, m_passwd, m_db_name, m_port));
         }
     }
 
-    MySQLConnectionPool* MySQLConnectionPool::getInstance() {
+    std::shared_ptr<MySQLConnectionPool> MySQLConnectionPool::getInstance() {
         if (!m_instance) {
             AutoLockMutex autoLockMutex(&m_instance_mutex);
             if (!m_instance)
-                m_instance = new MySQLConnectionPool();
+                m_instance = std::shared_ptr<MySQLConnectionPool>(new MySQLConnectionPool());
         }
         return m_instance;
     }

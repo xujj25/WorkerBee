@@ -17,7 +17,7 @@ using namespace xjj;
 class BusinessLogic {
 private:
 
-    MySQLConnectionPool* m_conn_pool;
+    shared_ptr<MySQLConnectionPool> m_conn_pool;
 
     static const int
             InsertCmd = 0,
@@ -31,9 +31,9 @@ private:
             Success = 2,
             Fail = 3;
 
-    sql::ResultSet* executeSQL(const std::string& sql) {
-        sql::ResultSet* res = nullptr;
-        shared_ptr<sql::Connection> con = nullptr;
+    shared_ptr<sql::ResultSet> executeSQL(const std::string& sql) {
+        shared_ptr<sql::ResultSet> res = nullptr;
+        shared_ptr<sql::Connection> con(nullptr);
         try {
             con = m_conn_pool -> getConnection();
             shared_ptr<sql::Statement> stmt(con -> createStatement());
@@ -62,7 +62,7 @@ private:
         sql.append(doc["Name"].GetString());
         sql.append("\')");
 
-        unique_ptr<sql::ResultSet> res(executeSQL(sql));
+        shared_ptr<sql::ResultSet> res(executeSQL(sql));
         if (res == nullptr)
             return SQLErr;
 
@@ -78,7 +78,7 @@ private:
         std::string sql = "SELECT Name FROM Writers WHERE Id = ";
         sql.append(std::to_string(doc["Id"].GetInt()));
 
-        unique_ptr<sql::ResultSet> res(executeSQL(sql));
+        shared_ptr<sql::ResultSet> res(executeSQL(sql));
         if (res == nullptr)
             return SQLErr;
         auto &alloc = res_doc.GetAllocator();
@@ -104,7 +104,7 @@ private:
         sql.append("\' WHERE Id = ");
         sql.append(std::to_string(doc["Id"].GetInt()));
 
-        unique_ptr<sql::ResultSet> res(executeSQL(sql));
+        shared_ptr<sql::ResultSet> res(executeSQL(sql));
         if (res == nullptr)
             return SQLErr;
 
@@ -121,7 +121,7 @@ private:
         std::string sql = "DELETE FROM Writers WHERE Id = ";
         sql.append(std::to_string(doc["Id"].GetInt()));
 
-        unique_ptr<sql::ResultSet> res(executeSQL(sql));
+        shared_ptr<sql::ResultSet> res(executeSQL(sql));
         if (res == nullptr)
             return SQLErr;
 
@@ -133,9 +133,8 @@ private:
 
 public:
 
-    BusinessLogic() {
-        m_conn_pool = MySQLConnectionPool::getInstance();
-    }
+    BusinessLogic()
+            : m_conn_pool(MySQLConnectionPool::getInstance()) {}
 
     void operator() (Server::Request request, Server::Response response) {
         rapidjson::Document doc;

@@ -22,9 +22,9 @@ namespace xjj {
 
         static Mutex m_instance_mutex;
 
-        static MySQLConnectionPool* m_instance;
+        static std::shared_ptr<MySQLConnectionPool> m_instance;
 
-        std::unique_ptr<sql::Driver> m_driver;
+        std::shared_ptr<sql::Driver> m_driver;
 
         Mutex m_list_mutex;
 
@@ -50,7 +50,7 @@ namespace xjj {
 
         ~MySQLConnectionPool();
 
-        static MySQLConnectionPool* getInstance();
+        static std::shared_ptr<MySQLConnectionPool> getInstance();
 
         std::shared_ptr<sql::Connection> getConnection();
 
