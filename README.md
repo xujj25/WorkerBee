@@ -97,6 +97,10 @@ POSIX线程库
 
 MySQL官方C语言API
 
+### 其他依赖
+
+[RapidJSON](http://rapidjson.org/zh-cn/)（用于解析配置文件）
+
 ## 使用指南
 
 目前仍处于测试阶段，将持续更新。。。
