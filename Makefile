@@ -3,7 +3,7 @@ CC:= g++ -std=c++11 -g
 
 bin/test: build/condition_variable.o build/mutex.o build/mysql_connection.o \
 	build/thread_pool.o build/server.o build/mysql_connection_pool.o build/test.o
-	$(CC) -I ./include $^ -o $@ -lpthread -lmysqlcppconn
+	$(CC) -I ./include $^ -o $@ -lpthread -lmysqlclient
 build/condition_variable.o: include/condition_variable.hpp src/condition_variable.cpp
 	$(CC) -I ./include -c src/condition_variable.cpp -o $@
 build/mutex.o: include/mutex.hpp src/mutex.cpp
