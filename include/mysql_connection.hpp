@@ -28,7 +28,73 @@ namespace sql {
         );
     };
 
+    class Connection;
+    class Statement;
+    class ResultSet;
+
+    class Driver {
+    private:
+
+        static Mutex m_mutex;
+
+        static Driver* m_instance;
+
+        Driver() = default;
+
+    public:
+
+        ~Driver();
+
+        static Driver* getDriverInstance();
+
+        Connection* connect(
+                const std::string& host = "",
+                const std::string& user = "",
+                const std::string& passwd = "",
+                const std::string& db = "",
+                unsigned int port = 0
+        );
+    };
+
+    class Connection {
+        friend Connection* Driver::connect(
+                const std::string& host,
+                const std::string& user,
+                const std::string& passwd,
+                const std::string& db,
+                unsigned int port
+        );
+
+    private:
+        MYSQL *m_mysql;
+
+        explicit Connection(MYSQL *mysql);
+
+    public:
+
+        ~Connection();
+
+        void setSchema(const std::string& catalog);
+
+        Statement* createStatement();
+    };
+
+    class Statement {
+        friend Statement *Connection::createStatement();
+
+    private:
+        MYSQL *m_mysql;
+
+        explicit Statement(MYSQL *mysql);
+
+    public:
+
+        ResultSet* executeQuery(const std::string& sql);
+    };
+
     class ResultSet {
+    friend ResultSet *Statement::executeQuery(const std::string &sql);
+
     private:
         int m_row_num;
 
@@ -39,9 +105,10 @@ namespace sql {
         MYSQL_RES *m_result;
 
         MYSQL_ROW m_row;
-    public:
 
         explicit ResultSet(MYSQL *mysql);
+
+    public:
 
         ~ResultSet();
 
@@ -58,54 +125,6 @@ namespace sql {
         std::string getString(uint32_t column_index) const;
 
         std::string getString(const std::string& column_label) const;
-    };
-
-    class Statement {
-    private:
-        MYSQL *m_mysql;
-    public:
-
-        explicit Statement(MYSQL *mysql);
-
-        ResultSet* executeQuery(const std::string& sql);
-    };
-
-    class Connection {
-    private:
-        MYSQL *m_mysql;
-    public:
-
-        explicit Connection(MYSQL *mysql);
-
-        ~Connection();
-
-        void setSchema(const std::string& catalog);
-
-        Statement* createStatement();
-    };
-
-    class Driver {
-    private:
-
-        static Mutex m_mutex;
-
-        static Driver* m_instance;
-
-        Driver();
-
-    public:
-
-        ~Driver();
-
-        static Driver* getDriverInstance();
-
-        Connection* connect(
-                const std::string& host = "",
-                const std::string& user = "",
-                const std::string& passwd = "",
-                const std::string& db = "",
-                unsigned int port = 0
-        );
     };
 } // namespace sql
 } // namespace xjj

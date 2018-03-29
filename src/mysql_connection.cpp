@@ -120,14 +120,6 @@ namespace sql {
         mysql_close(m_mysql);
     }
 
-    Driver::Driver() {
-//        m_mysql = mysql_init(nullptr);
-    }
-
-    Driver::~Driver() {
-//        mysql_close(m_mysql);
-    }
-
     Driver* Driver::m_instance = nullptr;
 
     Mutex Driver::m_mutex;
@@ -156,5 +148,8 @@ namespace sql {
                     mysql, "xjj::sql::Driver::connect", "connecting");
         return new Connection(mysql);
     }
+
+    Driver::~Driver() {}
+    
 } // namespace sql
 } // namespace xjj
