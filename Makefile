@@ -16,7 +16,7 @@ build/server.o: include/server.hpp src/server.cpp
 	$(CC) -I ./include -c src/server.cpp -o $@
 build/mysql_connection_pool.o: include/mysql_connection_pool.hpp src/mysql_connection_pool.cpp
 	$(CC) -I ./include -c src/mysql_connection_pool.cpp -o $@
-build/test.o: src/test.cpp
+build/test.o: example/test.cpp
 	$(CC) -I ./include -c $^ -o $@
 
 clean:
