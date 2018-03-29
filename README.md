@@ -73,34 +73,73 @@
 
 ## 项目环境及依赖
 
-### 操作系统
-
-Ubuntu 16.04
-
-### 语言
-
-C++（采用C++11标准）
-
-### 编译器
-
-g++ 5.4.0
-
-### 自动化构建工具
-
-GNU Make 4.1
-
-### 线程库
-
-POSIX线程库
-
-### MySQL API
-
-MySQL官方C语言API
-
-### 其他依赖
-
-[RapidJSON](http://rapidjson.org/zh-cn/)（用于解析配置文件）
+- 操作系统：Ubuntu 16.04
+- 语言：C++（采用C++11标准）
+- 编译器：g++ 5.4.0
+- 自动化构建工具：GNU Make 4.1
+- 线程库：POSIX线程库
+- MySQL API：MySQL官方C语言API
+- 其他依赖：[RapidJSON](http://rapidjson.org/zh-cn/)（用于解析配置文件）
 
 ## 使用指南
 
-目前仍处于测试阶段，将持续更新。。。
+1. 按照项目环境及依赖配置相关内容。
+
+2. 获取本项目：
+
+    ```bash
+    git clone https://github.com/xujj25/epoll-multithread-server.git
+    ```
+
+3. 进入项目主目录，添加配置文件`config.json`，字段包括：
+    - `ip`：服务器IP地址
+    - `port`：服务器开启端口
+    - `db_host`：MySQL数据库地址
+    - `db_user`：数据库用户名
+    - `db_passwd`：数据库密码
+    - `db_name`：数据库名
+    - `db_port`：数据库端口
+    - `db_pool_size`：数据库连接池大小，建议与线程池大小相同
+   
+   完整示例如下：
+    ```JSON
+    {
+        "ip": "127.0.0.1", 
+        "port": 1234,
+        "db_host": "127.0.0.1",
+        "db_user": "username",
+        "db_passwd": "password",
+        "db_name": "testdb",
+        "db_port": 3306,
+        "db_pool_size": 5
+    }
+    ```
+4. 编译运行[示例程序](https://github.com/xujj25/epoll-multithread-server/blob/master/example/test.cpp)：
+    ```bash
+    # 自动构建
+    make
+
+    # 运行
+    ./bin/test
+    ```
+5. 用户代码使用指南：
+    ```cpp
+    #include <memory>
+    #include "server.hpp"
+
+    int main() {
+        std::unique_ptr<xjj::Server> server(new xjj::Server(
+            [] (const xjj::Server::Request& req,
+                    xjj::Server::Response& res) {
+                
+                std::string req_body = req.getBody();
+                std::string res_body;        
+
+                // 此处编写用户业务逻辑代码
+
+                res.sendResponse(res_body);
+            }
+        ))
+    }
+    ```
+    之后模仿示例代码修改Makefile之后即可编译运行。
