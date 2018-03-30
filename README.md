@@ -36,7 +36,23 @@
 
 ### 简述
 
-本项目实现了一个简单的应用层协议，客户端和服务器之间进行数据传输时，为每个请求加上“包头”，“包头”的内容即“包体”的长度，以小端序表示，占用4个字节。
+本项目实现了一个简单的应用层协议，客户端和服务器之间进行数据传输时，为每个请求加上“包头”，“包头”的内容即“包体”的长度，以小端序表示，占用4个字节。示意图如下：
+
+```plain
++--------------------+
+|       Header       |
+|     (4-byte,       |
+|  little-endian)    |
++--------------------+
+|                    |
+|                    |
+|                    |
+|        Body        |
+|                    |
+|                    |
+|                    |
++--------------------+
+```
 
 ### 目的
 
@@ -115,14 +131,31 @@
     }
     ```
 4. 编译运行[示例程序](https://github.com/xujj25/epoll-multithread-server/blob/master/example/test.cpp)：
+- 自动构建客户端和服务端示例程序：
     ```bash
-    # 自动构建
     make
-
-    # 运行
-    ./bin/test
     ```
+- 服务端：
+    - 在MySQL中建立数据库表`Writers`：
+    ```SQL
+    CREATE TABLE `Writers` (
+        `Id` int(11) NOT NULL AUTO_INCREMENT,
+        `Name` text,
+        PRIMARY KEY (`Id`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8；
+    ```
+    - 运行：
+    ```bash
+    ./bin/server_test
+    ```
+- 客户端：
+    - 运行：
+    ```bash
+    ./bin/client_test
+    ```
+
 5. 用户代码使用指南：
+- 服务端：
     ```cpp
     #include <memory>
     #include "server.hpp"
@@ -144,3 +177,4 @@
     }
     ```
     之后模仿示例代码修改Makefile之后即可编译运行。
+- 客户端：遵循上述封包操作即可。
