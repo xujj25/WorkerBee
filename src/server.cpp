@@ -32,6 +32,7 @@ namespace xjj {
     Server::Server(std::function<void(const Request&, Response&)> business_logic)
             : m_thread_pool_size(5),
               m_thread_pool_overload(true),
+              m_is_running(false),
               m_business_logic(std::move(business_logic)),
               m_thread_pool(nullptr) {}
 
@@ -39,8 +40,19 @@ namespace xjj {
      * @brief 析构函数
      */
     Server::~Server() {
-        close(m_listen_fd);  // 关闭服务端监听套接字文件描述符
-        m_thread_pool -> terminate();  // 终止线程池
+        terminate();
+    }
+    /*!
+     * @brief 终止服务器
+     */
+    void Server::terminate() {
+        if (m_is_running) {
+            printf("The server is going to terminate\n");
+
+            close(m_listen_fd);  // 关闭服务端监听套接字文件描述符
+            m_thread_pool -> terminate();  // 终止线程池
+            m_is_running = false;
+        }
     }
 
     /*!
@@ -53,6 +65,8 @@ namespace xjj {
         initServer();  // 初始化服务器
 
         printf("\nFinished initialization, going to run.\n");
+
+        m_is_running = true;
 
         while (true)  // 循环等待epoll事件到来
         {

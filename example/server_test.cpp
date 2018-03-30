@@ -1,6 +1,8 @@
+#include <stdexcept>
 #include <string>
 #include <iostream>
 #include <memory>
+#include <csignal>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -10,9 +12,43 @@
 
 using std::cout;
 using std::endl;
+using std::cerr;
 using std::unique_ptr;
 using std::shared_ptr;
 using namespace xjj;
+
+template <typename SignalExceptionClass>
+class SignalTranslator {
+private:
+    class SingletonTranslator {
+    public:
+        SingletonTranslator() {
+            signal(SignalExceptionClass::getSignalCode(), signalHandler);
+        }
+        static void signalHandler(int) {
+            throw SignalExceptionClass();
+        }
+    };
+
+public:
+    SignalTranslator() {
+        static SingletonTranslator m_signal_translator;
+    }
+};
+
+class SigIntException : public std::exception {
+public:
+    static int getSignalCode() {
+        return SIGINT;
+    }
+};
+
+class SigQuitException : public std::exception {
+public:
+    static int getSignalCode() {
+        return SIGQUIT;
+    }
+};
 
 /*!
  * @brief 实例业务逻辑类
@@ -251,9 +287,15 @@ public:
 };
 
 int main() {
+    SignalTranslator<SigIntException> signalTranslatorForSigInt;
+    SignalTranslator<SigQuitException> signalTranslatorForSigQuit;
     BusinessLogic businessLogic;
     unique_ptr<Server> server(new Server(businessLogic));
-    server -> run();
-
+    try {
+        server -> run();
+    } catch (std::exception& e) {
+        cerr << e.what() << endl;
+        server -> terminate();
+    }
     return 0;
 }

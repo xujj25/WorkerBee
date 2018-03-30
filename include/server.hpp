@@ -159,6 +159,11 @@ namespace xjj {
         ~Server();
 
         /*!
+         * @brief 终止服务器
+         */
+        void terminate();
+
+        /*!
          * @brief 运行服务器
          */
         void run();
@@ -262,6 +267,8 @@ namespace xjj {
         /// 服务器监听套接字文件描述符
         int m_listen_fd;
 
+        /// 服务器运行状态标识
+        bool m_is_running;
     };
 } // namespace xjj
 
