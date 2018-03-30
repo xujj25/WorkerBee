@@ -110,18 +110,22 @@
 3. 进入项目主目录，添加配置文件`config.json`，字段包括：
     - `ip`：服务器IP地址
     - `port`：服务器开启端口
+    - `thread_pool_size`：线程池大小（可选项，默认为5）
+    - `thread_pool_overload`：是否允许线程池过载，即是否允许池中总任务量大于工作线程数目（可选项，默认为 `true`）
     - `db_host`：MySQL数据库地址
     - `db_user`：数据库用户名
     - `db_passwd`：数据库密码
-    - `db_name`：数据库名
-    - `db_port`：数据库端口
-    - `db_pool_size`：数据库连接池大小，建议与线程池大小相同
+    - `db_name`：数据库名（可选项，可在数据库建立连接后调用 `setSchema` 进行设置）
+    - `db_port`：数据库端口（可选项，缺省情况下会自动选择MySQL服务器的监听端口）
+    - `db_pool_size`：数据库连接池大小，建议与线程池大小相同（可选项，默认为5）
    
    完整示例如下：
     ```JSON
     {
-        "ip": "127.0.0.1", 
+        "ip": "127.0.0.1",
         "port": 1234,
+        "thread_pool_size": 5,
+        "thread_pool_overload": true,
         "db_host": "127.0.0.1",
         "db_user": "username",
         "db_passwd": "password",
@@ -131,50 +135,50 @@
     }
     ```
 4. 编译运行[示例程序](https://github.com/xujj25/epoll-multithread-server/tree/master/example)：
-- 自动构建客户端和服务端示例程序：
-    ```bash
-    make
-    ```
-- 服务端：
-    - 在MySQL中建立数据库表`Writers`：
-    ```SQL
-    CREATE TABLE `Writers` (
-        `Id` int(11) NOT NULL AUTO_INCREMENT,
-        `Name` text,
-        PRIMARY KEY (`Id`)
-    ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8；
-    ```
-    - 运行：
-    ```bash
-    ./bin/server_test
-    ```
-- 客户端：
-    - 运行：
-    ```bash
-    ./bin/client_test
-    ```
+    - 自动构建客户端和服务端示例程序：
+        ```bash
+        make
+        ```
+    - 服务端：
+        - 在MySQL中建立数据库表`Writers`：
+        ```SQL
+        CREATE TABLE `Writers` (
+            `Id` int(11) NOT NULL AUTO_INCREMENT,
+            `Name` text,
+            PRIMARY KEY (`Id`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8；
+        ```
+        - 运行：
+        ```bash
+        ./bin/server_test
+        ```
+    - 客户端：
+        - 运行：
+        ```bash
+        ./bin/client_test
+        ```
 
 5. 用户代码使用指南：
-- 服务端：
-    ```cpp
-    #include <memory>
-    #include "server.hpp"
+    - 服务端：
+        ```cpp
+        #include <memory>
+        #include "server.hpp"
 
-    int main() {
-        std::unique_ptr<xjj::Server> server(new xjj::Server(
-                [] (const xjj::Server::Request& req,
-                    xjj::Server::Response& res) {
+        int main() {
+            std::unique_ptr<xjj::Server> server(new xjj::Server(
+                    [] (const xjj::Server::Request& req,
+                        xjj::Server::Response& res) {
 
-                    std::string req_body = req.getBody();
-                    std::string res_body;
+                        std::string req_body = req.getBody();
+                        std::string res_body;
 
-                    // 此处编写用户业务逻辑代码
+                        // 此处编写用户业务逻辑代码
 
-                    res.sendResponse(res_body);
-                }
-        ));
-        server -> run();
-    }
-    ```
-    之后模仿示例代码修改Makefile之后即可编译运行。
-- 客户端：遵循上述封包操作即可。
+                        res.sendResponse(res_body);
+                    }
+            ));
+            server -> run();
+        }
+        ```
+        之后模仿示例代码修改Makefile之后即可编译运行。
+    - 客户端：遵循上述封包操作即可。

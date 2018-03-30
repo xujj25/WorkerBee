@@ -17,7 +17,8 @@ namespace xjj {
     /*!
      * @brief 构造函数
      */
-    MySQLConnectionPool::MySQLConnectionPool() {
+    MySQLConnectionPool::MySQLConnectionPool()
+            : m_pool_size(5), m_port(0) {
         m_driver = sql::Driver::getDriverInstance();
 
         getConfiguration();  // 获取配置文件配置信息
@@ -77,21 +78,28 @@ namespace xjj {
             if (!document.HasMember("db_passwd") || !document["db_passwd"].IsString())
                 throw std::runtime_error(exception_msg + "\"db_passwd\"");
 
-            if (!document.HasMember("db_name") || !document["db_name"].IsString())
-                throw std::runtime_error(exception_msg + "\"db_name\"");
-
-            if (!document.HasMember("db_port") || !document["db_port"].IsUint())
-                throw std::runtime_error(exception_msg + "\"db_port\"");
-
-            if (!document.HasMember("db_pool_size") || !document["db_pool_size"].IsUint64())
-                throw std::runtime_error(exception_msg + "\"db_pool_size\"");
-
             m_host = document["db_host"].GetString();
             m_user = document["db_user"].GetString();
             m_passwd = document["db_passwd"].GetString();
-            m_db_name = document["db_name"].GetString();
-            m_port = document["db_port"].GetUint();
-            m_pool_size = document["db_pool_size"].GetUint64();
+
+            // 以下为可选配置项
+            if (document.HasMember("db_name")) {
+                if (!document["db_name"].IsString())
+                    throw std::runtime_error(exception_msg + "\"db_name\"");
+                m_db_name = document["db_name"].GetString();
+            }
+
+            if (document.HasMember("db_port")) {
+                if (!document["db_port"].IsUint())
+                    throw std::runtime_error(exception_msg + "\"db_port\"");
+                m_port = document["db_port"].GetUint();
+            }
+
+            if (document.HasMember("db_pool_size")) {
+                if (!document["db_pool_size"].IsUint64())
+                    throw std::runtime_error(exception_msg + "\"db_pool_size\"");
+                m_pool_size = document["db_pool_size"].GetUint64();
+            }
 
         } else {
             throw std::runtime_error("Fail to open \"./config.json\"!");

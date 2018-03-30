@@ -30,8 +30,10 @@ namespace xjj {
      * @param [in] business_logic 业务逻辑函数对象
      */
     Server::Server(std::function<void(const Request&, Response&)> business_logic)
-            : m_business_logic(std::move(business_logic)),
-              m_thread_pool(new ThreadPool()) {}
+            : m_thread_pool_size(5),
+              m_thread_pool_overload(true),
+              m_business_logic(std::move(business_logic)),
+              m_thread_pool(nullptr) {}
 
     /*!
      * @brief 析构函数
@@ -180,6 +182,7 @@ namespace xjj {
         assert(m_epoll_fd != -1);
         addFd(m_listen_fd, false);  // 监听套接字不能设置为OneShot！
 
+        m_thread_pool.reset(new ThreadPool(m_thread_pool_size, m_thread_pool_overload));
         m_thread_pool -> start();  // 启动线程池
     }
 
@@ -215,6 +218,21 @@ namespace xjj {
             // 根据配置文件初始化IP和端口
             m_ip = document["ip"].GetString();
             m_port = static_cast<uint16_t>(document["port"].GetUint());
+
+            // 以下为可选配置项
+            if (document.HasMember("thread_pool_size")) {
+                if (!document["thread_pool_size"].IsUint64()) {
+                    throw std::runtime_error(exception_msg + "\"thread_pool_size\"");
+                }
+                m_thread_pool_size = document["thread_pool_size"].GetUint64();
+            }
+
+            if (document.HasMember("thread_pool_overload")) {
+                if (!document["thread_pool_overload"].IsBool()) {
+                    throw std::runtime_error(exception_msg + "\"thread_pool_overload\"");
+                }
+                m_thread_pool_overload = document["thread_pool_overload"].GetBool();
+            }
 
         } else {
             throw std::runtime_error("Fail to open \"./config.json\"!");

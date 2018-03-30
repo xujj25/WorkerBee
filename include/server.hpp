@@ -253,6 +253,12 @@ namespace xjj {
         /// 服务器端口
         uint16_t m_port;
 
+        /// 线程池大小
+        ThreadPool::thread_num_type m_thread_pool_size;
+
+        /// 线程池是否允许过载
+        bool m_thread_pool_overload;
+
         /// 服务器监听套接字文件描述符
         int m_listen_fd;
 
