@@ -130,7 +130,7 @@
         "db_pool_size": 5
     }
     ```
-4. 编译运行[示例程序](https://github.com/xujj25/epoll-multithread-server/blob/master/example/test.cpp)：
+4. 编译运行[示例程序](https://github.com/xujj25/epoll-multithread-server/tree/master/example)：
 - 自动构建客户端和服务端示例程序：
     ```bash
     make
