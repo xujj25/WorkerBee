@@ -21,6 +21,17 @@ namespace xjj {
         ConditionVariable();
 
         /*!
+         * @brief 拷贝构造函数，设为delete，阻止拷贝
+         */
+        ConditionVariable(const ConditionVariable&) = delete;
+
+        /*!
+         * @brief 复制操作，设为delete，阻止赋值
+         * @return ConditionVariable& 
+         */
+        ConditionVariable& operator=(const ConditionVariable&) = delete;
+
+        /*!
          * @brief 析构函数
          */
         ~ConditionVariable();

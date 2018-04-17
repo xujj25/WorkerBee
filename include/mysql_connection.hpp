@@ -79,6 +79,17 @@ namespace sql {
     public:
 
         /*!
+         * @brief 禁止拷贝构造
+         */
+        Driver(const Driver&) = delete;
+
+        /*!
+         * @brief 禁止赋值
+         * @return Driver& 
+         */
+        Driver& operator=(const Driver&) = delete;
+
+        /*!
          * @brief 驱动全局单例获取函数
          * @return 驱动全局单例
          */
@@ -129,6 +140,17 @@ namespace sql {
     public:
 
         /*!
+         * @brief 禁止拷贝构造
+         */
+        Connection(const Connection&) = delete;
+
+        /*!
+         * @brief 禁止赋值
+         * @return Connection& 
+         */
+        Connection& operator=(const Connection&) = delete;
+
+        /*!
          * @brief 析构函数
          */
         ~Connection();
@@ -166,6 +188,17 @@ namespace sql {
         explicit Statement(MYSQL *mysql);
 
     public:
+
+        /*!
+         * @brief 禁止拷贝构造
+         */
+        Statement(const Statement&) = delete;
+
+        /*!
+         * @brief 禁止赋值
+         * @return Statement& 
+         */
+        Statement& operator=(const Statement&) = delete;
 
         /*!
          * @brief 执行sql语句
@@ -207,6 +240,17 @@ namespace sql {
         explicit ResultSet(MYSQL *mysql);
 
     public:
+
+        /*!
+         * @brief 禁止拷贝构造
+         */
+        ResultSet(const ResultSet&) = delete;
+
+        /*!
+         * @brief 禁止赋值
+         * @return ResultSet& 
+         */
+        ResultSet& operator=(const ResultSet&) = delete;
 
         /*!
          * @brief 析构函数
