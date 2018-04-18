@@ -181,4 +181,4 @@
         }
         ```
         之后模仿示例代码修改Makefile之后即可编译运行。
-    - 客户端：遵循上述封包操作即可。
+    - 客户端：遵循[封包操作](https://github.com/xujj25/epoll-multithread-server#%E5%B0%81%E5%8C%85%E6%93%8D%E4%BD%9C%E8%AF%A6%E8%A7%A3)即可。
