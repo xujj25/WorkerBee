@@ -61,7 +61,7 @@ namespace xjj {
     };
 
     /*!
-     * @brief 自动加锁互斥量类 \class
+     * @brief 自动加解锁互斥量类 \class
      * 底层数据类型为Mutex*，在构造函数中就进行加锁，
      * 在析构函数中进行解锁
      */
