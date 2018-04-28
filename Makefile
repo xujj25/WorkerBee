@@ -1,4 +1,4 @@
-CC:= g++ -std=c++11 -g
+CC:= g++ -std=c++11 -g -Wall
 
 all: bin/client_test bin/server_test
 
