@@ -94,6 +94,18 @@ namespace xjj {
     }
 
     /*!
+    * @brief 将文件描述符设置为阻塞读写模式
+    * @param [in] fd 目标文件描述符
+    * @return 文件描述符上原来的模式掩码
+    */
+    int Server::cancelNonBlocking(int fd) {
+        int old_option = fcntl(fd, F_GETFL);
+        int new_option = old_option & ~O_NONBLOCK;
+        fcntl(fd, F_SETFL, new_option);
+        return old_option;
+    }
+
+    /*!
      * @brief 讲文件描述符fd添加到epoll监听列表中
      * @param [in] fd 目标文件描述符
      * @param [in] enable_one_shot 使用EPOLLONESHOT模式（避免线程竞争读fd）
@@ -139,14 +151,9 @@ namespace xjj {
                         [=] () {
                             DEBUG_PRINT("Going to process packet from sock_fd = %d\n", sock_fd);
 
-                            std::unique_ptr<PacketProcessor>
-                                    processor(new PacketProcessor(m_business_logic));
+                            std::unique_ptr<PacketProcessor> processor(new PacketProcessor());
 
-                            // 利用读操作只能单线程执行的特性，初始化对应socket连接的互斥量，以便后续写操作使用
-                            if (Response::m_socket_mutex_map.find(sock_fd) == Response::m_socket_mutex_map.end())
-                                Response::m_socket_mutex_map[sock_fd] = std::shared_ptr<Mutex>(new Mutex());
-
-                            int ret = processor -> readBuffer(sock_fd);  // 读取处理缓冲区
+                            int ret = processor -> readBuffer(sock_fd, this->m_business_logic);  // 读取处理缓冲区
                             switch (ret) {
                                 case CloseSockFdStatusCode: // 处理结果为关闭连接
                                     closeSocketConnection(sock_fd);
@@ -261,9 +268,6 @@ namespace xjj {
         // 取消对socket文件描述符的epoll事件监听
         epoll_ctl(m_epoll_fd, EPOLL_CTL_DEL, sock_fd, nullptr);
 
-        // 删除对应互斥量
-        Response::m_socket_mutex_map.erase(sock_fd);
-
         close(sock_fd);
     }
 
@@ -271,15 +275,17 @@ namespace xjj {
      * @brief 构造函数
      * @param [in] business_logic 用户业务逻辑函数对象
      */
-    Server::PacketProcessor::PacketProcessor(std::function<void(const Request&, Response&)>& business_logic)
-            : m_packet_len(-1), m_business_logic(business_logic) {}
+    Server::PacketProcessor::PacketProcessor()
+            : m_packet_len(-1) {}
 
     /*!
-     * @brief 读取并处理缓冲区数据
-     * @param [in] sock_fd 欲读取的socket文件描述符
-     * @return 操作完成状态码，包括 ResetOneShotStatusCode 和 CloseSockFdStatusCode
-     */
-    int Server::PacketProcessor::readBuffer(int sock_fd) {
+    * @brief 读取并处理缓冲区数据
+    * @param [in] sock_fd 欲读取的socket文件描述符
+    * @param [in] business_logic 需要对请求执行的业务逻辑
+    * @return 操作完成状态码，包括 ResetOneShotStatusCode 和 CloseSockFdStatusCode
+    */
+    int Server::PacketProcessor::readBuffer(int sock_fd, 
+            const std::function<void(const Request&, Response&)>& business_logic) {
         while (true) {
             bzero(&m_buffer[0], BUFFER_SIZE);  // 清空缓冲区
             int ret = static_cast<int>(recv(sock_fd, &m_buffer[0], BUFFER_SIZE - 1, 0));
@@ -295,17 +301,28 @@ namespace xjj {
                 return Server::CloseSockFdStatusCode;
             } else {  // 正常读取到数据，进行处理
                 DEBUG_PRINT("Got %d bytes of content: %s\n", ret, &m_buffer[0]);
-                generatePacket(ret, sock_fd);
+                
+                std::string valid_packet;
+                
+                generatePacket(ret, sock_fd, valid_packet);
+
+                if (!valid_packet.empty()) {
+                    // 执行业务逻辑
+                    Request req(valid_packet);
+                    Response res(sock_fd);
+                    business_logic(req, res);
+                }
             }
         }
     }
 
     /*!
-     * @brief 生成单个请求报文
-     * @param [in] data_len 缓冲区中数据长度
-     * @param [in] sock_fd 对应socket文件描述符
-     */
-    void Server::PacketProcessor::generatePacket(int data_len, int sock_fd) {
+    * @brief 生成单个请求报文
+    * @param [in] data_len 缓冲区中数据长度
+    * @param [in] sock_fd 对应socket文件描述符
+    * @param [out] valid_packet 需要生成的实际报文内容
+    */
+    void Server::PacketProcessor::generatePacket(int data_len, int sock_fd, std::string& valid_packet) {
         if (-1 == m_packet_len) {  // 判断将要处理的报文长度是否已知
             getPacketLen(data_len);  // 报文长度未知，根据字节流解析出报文头，也就是报文长度
         } else {
@@ -326,18 +343,13 @@ namespace xjj {
             printBreakpoint(6);
 
             // 获取剪裁出来的当前处理报文
-            std::string valid_packet(m_packet.substr(0, static_cast<unsigned long>(m_packet_len)));
-
-            // 执行业务逻辑
-            Request req(valid_packet);
-            Response res(sock_fd);
-            m_business_logic(req, res);
+            valid_packet = std::move(m_packet.substr(0, static_cast<unsigned long>(m_packet_len)));            
 
             // 切分报文边界，获取后续报文的包头
             cutPacketStream();
+            
+            DEBUG_PRINT("After cut: m_packet_len = %d, m_packet = \"%s\"\n", m_packet_len, m_packet.c_str());
         }
-
-        DEBUG_PRINT("After cut: m_packet_len = %d, m_packet = \"%s\"\n", m_packet_len, m_packet.c_str());
     }
 
     /*!
@@ -444,7 +456,8 @@ namespace xjj {
      * @param [in] sock_fd 初始化响应的套接字文件描述符
      */
     Server::Response::Response(int sock_fd)
-            : m_sock_fd(sock_fd) {}
+            : m_sock_fd(sock_fd), 
+              m_send_offset(0) {}
 
     /*!
      * @brief 将报文体的长度转换成字符表示，用于做为响应报文头
@@ -459,26 +472,21 @@ namespace xjj {
         return res;
     }
 
-    /// 套接字文件描述符与Mutex指针哈希表
-    std::unordered_map<int, std::shared_ptr<Mutex>> Server::Response::m_socket_mutex_map;
-
     /*!
      * @brief 发送响应报文
      * @param [in] body 响应报文体
      */
     void Server::Response::sendResponse(const std::string &body) {
-        std::string packet(  // 初始化响应报文，添加报文头
-                std::move(  // 采用移动构造，减少内存拷贝开销
-                        lenToString(static_cast<int>(body.length()))
-                )
-        );
+         // 初始化响应报文，添加报文头
+         // 采用移动构造，减少内存拷贝开销
+        m_packet = std::move(lenToString(static_cast<int>(body.length())));
 
-        packet.append(body); // 添加报文体
+        m_packet.append(body); // 添加报文体
 
-        DEBUG_PRINT("Going to send: %s", packet.c_str());
+        DEBUG_PRINT("Going to send: %s", m_packet.c_str());
 
-        // 使用连接fd匹配互斥量加锁，防止多线程竞争写同个fd
-        AutoLockMutex autoLockMutex(m_socket_mutex_map[m_sock_fd].get());
-        send(m_sock_fd, packet.c_str(), packet.length(), 0);
+        Server::cancelNonBlocking(m_sock_fd);  // 取消非阻塞读写
+        send(m_sock_fd, m_packet.c_str(), m_packet.length(), 0);
+        Server::setNonBlocking(m_sock_fd);  // 重新设置非阻塞读写
     }
 } // namespace xjj
