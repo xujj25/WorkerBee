@@ -2,10 +2,10 @@
 // created by xujijun on 2018-03-19
 //
 
-#include "thread_pool.hpp"
 #include <algorithm>
 #include <iostream>
 #include <utility>
+#include "thread_pool.hpp"
 
 namespace xjj {
 
@@ -20,9 +20,9 @@ namespace xjj {
      * @param [in] overload 是否允许过载，即等待任务数与工作任务数超过线程总数
      */
     ThreadPool::ThreadPool(thread_num_type thread_num, bool overload)
-            :m_thread_num(static_cast<thread_num_type>(std::min(MaxThreadNum, thread_num))),
-             m_overload(overload),
-             m_running(false) {
+            : m_thread_num(static_cast<thread_num_type>(std::min(MaxThreadNum, thread_num))),
+              m_overload(overload),
+              m_running(false) {
         // 创建内部线程对象，但底层线程对象未创建
         for (thread_num_type i = 0; i < m_thread_num; i++) {
             auto thread_ptr =
