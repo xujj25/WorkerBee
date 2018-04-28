@@ -17,7 +17,6 @@
 #include <cstdarg>
 #include <functional>
 #include <sys/epoll.h>
-#include <unordered_map>
 #include "mutex.hpp"
 #include "thread_pool.hpp"
 
@@ -65,6 +64,12 @@ namespace xjj {
         class Response {
         private:
 
+            /// 完整响应报文
+            std::string m_packet;
+
+            /// 响应发送偏移量
+            int m_send_offset;
+
             /// 响应的套接字文件描述符
             int m_sock_fd;
 
@@ -75,9 +80,6 @@ namespace xjj {
              */
             inline std::string lenToString(int length);
         public:
-
-            /// 套接字文件描述符与Mutex指针哈希表
-            static std::unordered_map<int, std::shared_ptr<Mutex>> m_socket_mutex_map;
 
             /*!
              * @brief 构造函数
@@ -111,14 +113,15 @@ namespace xjj {
             std::string m_packet_len_buf;
 
             /// 需要执行的用户业务逻辑
-            std::function<void(const Request&, Response&)>& m_business_logic;
+            // std::function<void(const Request&, Response&)>& m_business_logic;
 
             /*!
              * @brief 生成单个请求报文
              * @param [in] data_len 缓冲区中数据长度
              * @param [in] sock_fd 对应socket文件描述符
+             * @param [out] valid_packet 需要生成的实际报文内容
              */
-            void generatePacket(int data_len, int sock_fd);
+            void generatePacket(int data_len, int sock_fd, std::string& valid_packet);
 
             /*!
              * @brief 获取单个报文的报文长度（包头）
@@ -135,16 +138,16 @@ namespace xjj {
 
             /*!
              * @brief 构造函数
-             * @param [in] business_logic 用户业务逻辑函数对象
              */
-            explicit PacketProcessor(std::function<void(const Request&, Response&)>& business_logic);
+            PacketProcessor();
 
             /*!
              * @brief 读取并处理缓冲区数据
              * @param [in] sock_fd 欲读取的socket文件描述符
+             * @param [in] business_logic 需要对请求执行的业务逻辑
              * @return 操作完成状态码，包括 ResetOneShotStatusCode 和 CloseSockFdStatusCode
              */
-            int readBuffer(int sock_fd);
+            int readBuffer(int sock_fd, const std::function<void(const Request&, Response&)>& business_logic);
         };
 
         /*!
@@ -168,14 +171,21 @@ namespace xjj {
          */
         void run();
 
-    private:
-
         /*!
          * @brief 将文件描述符设置为非阻塞读写模式
          * @param [in] fd 目标文件描述符
          * @return 文件描述符上原来的模式掩码
          */
-        int setNonBlocking(int fd);
+        static int setNonBlocking(int fd);
+
+        /*!
+         * @brief 将文件描述符设置为阻塞读写模式
+         * @param [in] fd 目标文件描述符
+         * @return 文件描述符上原来的模式掩码
+         */
+        static int cancelNonBlocking(int fd);
+
+    private:
 
         /*!
          * @brief 讲文件描述符fd添加到epoll监听列表中
